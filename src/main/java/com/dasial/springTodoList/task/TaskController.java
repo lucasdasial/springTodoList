@@ -1,9 +1,11 @@
 package com.dasial.springTodoList.task;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,12 +23,18 @@ public class TaskController {
 
   @PostMapping("/create")
   public ResponseEntity create(@RequestBody TaskModel data, HttpServletRequest request) {
-    var task = this.repo.save(data);
-
-    System.out.println(request.getAttribute("userId"));
 
     data.setUserId((UUID) request.getAttribute("userId"));
+    var currentDate = LocalDateTime.now();
 
+    if (currentDate.isAfter(data.getStartAt()) ||
+        currentDate.isAfter(data.getEndAt()) ||
+        data.getStartAt().isAfter(data.getEndAt())) {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body("Invalid date");
+    }
+
+    var task = this.repo.save(data);
     return ResponseEntity.status(HttpStatus.CREATED).body(task);
   }
 }
